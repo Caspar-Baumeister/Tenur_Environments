@@ -6,3 +6,5 @@ register(
     #,kwargs={'K':20, 'initial_potential':0.8}
 )
 
+print("works")
+
