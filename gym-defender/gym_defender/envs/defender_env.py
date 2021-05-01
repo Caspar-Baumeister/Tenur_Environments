@@ -1,4 +1,3 @@
-###### GYM ######
 import os
 import gym
 from gym import error, spaces, utils
@@ -8,18 +7,23 @@ import numpy as np
 
 class Defender(gym.Env):
 
-
     def __init__(self, K, initial_potential, verbose = 0):
-        self.state = None
-        self.game_state = None
         self.K = K
         self.initial_potential = initial_potential
+        self.verbose = verbose
+
+        # internel variables
         self.weights = np.power(2.0, [-(self.K - i) for i in range(self.K + 1)])
         self.done = 0
         self.reward = 0
+        self.state = None
+        self.game_state = None
+
+        # spaces
         self.action_space = spaces.Discrete(2)
-        self.observation_space= spaces.MultiDiscrete([10]* (2*K+2))
-        self.verbose = verbose
+        self.observation_space= spaces.MultiDiscrete([100000]* (2*K+2))
+
+        # random initial gamestate settings
         self.geo_prob = .3
         self.unif_prob = .4
         self.diverse_prob = .3
@@ -30,6 +34,10 @@ class Defender(gym.Env):
         
 
     def potential(self, A):
+        """Function to calculates the potential of a set A 
+        Arguments:
+            A {list} -- The state, from that we want to know the potential
+        """
         return np.sum(A*self.weights)
 
 
@@ -236,6 +244,7 @@ class Defender(gym.Env):
 
 
     ######################## State Space Sampling ##################################
+
     def random_start(self):
         return self.sample()
 
