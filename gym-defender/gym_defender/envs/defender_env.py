@@ -9,7 +9,7 @@ class Defender(gym.Env):
 
     def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, verbose = 0, 
     geo_prob = .3, unif_prob = .4, diverse_prob = .3, high_one_prob = 0.2, ):
-    
+
         self.K = K
         self.initial_potential = initial_potential
         
@@ -187,7 +187,7 @@ class Defender(gym.Env):
 
     def attacker_play(self):
         # if only few pieces left, play optimally
-        num_idxs = np.sum(self.game_state > 0)
+        num_idxs = np.sum(self.game_state)
         if num_idxs <= 3:
             return self.optimal_split()
         # otherwise play according to difficulty
