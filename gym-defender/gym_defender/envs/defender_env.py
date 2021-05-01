@@ -21,7 +21,7 @@ class Defender(gym.Env):
 
         # spaces
         self.action_space = spaces.Discrete(2)
-        self.observation_space= spaces.MultiDiscrete([100000]* (2*K+2))
+        self.observation_space= spaces.MultiDiscrete([10]* (2*K+2))
 
         # random initial gamestate settings
         self.geo_prob = .3
