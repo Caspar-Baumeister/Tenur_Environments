@@ -7,9 +7,13 @@ import numpy as np
 
 class Defender(gym.Env):
 
-    def __init__(self, K, initial_potential, verbose = 0):
+    def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, verbose = 0, 
+    geo_prob = .3, unif_prob = .4, diverse_prob = .3, high_one_prob = 0.2, ):
+    
         self.K = K
         self.initial_potential = initial_potential
+        
+        self.disjoint_support_probabillity = disjoint_support_probabillity
         self.verbose = verbose
 
         # internel variables
@@ -21,13 +25,16 @@ class Defender(gym.Env):
 
         # spaces
         self.action_space = spaces.Discrete(2)
+        # multidiscrete action space upper bound should be:
+        # 1.2 = the potential multiplicator (if potential is greater, there can be more pieces in each level.)
+        # [int(1.2 * (2**(min(15,K)-i))) for i in range(min(15,K)+1)] * 2 
         self.observation_space= spaces.MultiDiscrete([10]* (2*K+2))
 
         # random initial gamestate settings
-        self.geo_prob = .3
-        self.unif_prob = .4
-        self.diverse_prob = .3
-        self.high_one_prob = 0.2
+        self.geo_prob = geo_prob
+        self.unif_prob = unif_prob
+        self.diverse_prob = diverse_prob
+        self.high_one_prob = high_one_prob
         self.geo_high = self.K - 2
         self.unif_high = max(3, self.K-3)
         self.geo_ps = [0.45, 0.5, 0.6, 0.7, 0.8]
@@ -179,10 +186,12 @@ class Defender(gym.Env):
         return A, B
 
     def attacker_play(self):
-        if self.potential(self.game_state) >= 1:
+        # if only few pieces left, play optimally
+        num_idxs = np.sum(self.game_state > 0)
+        if num_idxs <= 3:
             return self.optimal_split()
-        # in ds_prop prozent of cases, attack will play disjoint support
-        if randint(1,100)<=50:
+        # otherwise play according to difficulty
+        if randint(1,100)<=self.disjoint_support_probabillity:
             return self.disjoint_support()
         else:
             return self.optimal_split()
