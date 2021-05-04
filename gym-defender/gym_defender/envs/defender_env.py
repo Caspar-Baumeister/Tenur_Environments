@@ -191,7 +191,7 @@ class Defender(gym.Env):
         if num_idxs <= 3:
             return self.optimal_split()
         # otherwise play according to difficulty
-        if randint(1,100)<=self.disjoint_support_probabillity:
+        if np.random.uniform()<=self.disjoint_support_probabillity:
             return self.disjoint_support()
         else:
             return self.optimal_split()
