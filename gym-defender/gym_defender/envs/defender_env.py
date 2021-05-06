@@ -7,7 +7,8 @@ import numpy as np
 
 class Defender(gym.Env):
 
-    def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, advanced_disjoint_support = False, verbose = 0, 
+    def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, advanced_disjoint_support = False, 
+    random_attacker = False, verbose = 0, 
     geo_prob = .3, unif_prob = .4, diverse_prob = .3, high_one_prob = 0.2):
 
         self.K = K
@@ -15,6 +16,7 @@ class Defender(gym.Env):
         
         self.disjoint_support_probabillity = disjoint_support_probabillity
         self.advanced_disjoint_support = advanced_disjoint_support
+        self.random_attacker=random_attacker
         self.verbose = verbose
 
         # internel variables
@@ -186,6 +188,23 @@ class Defender(gym.Env):
 
         return A, B
 
+    def random_split(self):
+        A = np.zeros(self.K+1, dtype=int)
+        B = np.zeros(self.K+1, dtype=int)
+
+        levels = [i for i in range(self.K + 1)]
+        levels.reverse()
+
+        for l in levels:
+            factor = np.random.uniform(low=0, high=1)
+            l_pieces = self.game_state[l]
+            a_pieces = int(factor*l_pieces)
+            A[l] += a_pieces
+            B[l] += l_pieces-a_pieces
+        return A, B
+
+
+
     def attacker_play(self):
         # if only few pieces left, play optimally
         num_idxs = np.sum(self.game_state)
@@ -194,10 +213,14 @@ class Defender(gym.Env):
         if self.advanced_disjoint_support and (self.potential(self.game_state) >= 1):
             return self.optimal_split()
         # otherwise play according to difficulty
-        if np.random.uniform()<=self.disjoint_support_probabillity:
+        if self.random_attacker:
+            return self.random_split()
+
+        if np.random.uniform(low=0, high=1)<=self.disjoint_support_probabillity:
             return self.disjoint_support()
         else:
             return self.optimal_split()
+        
 
 
     def check(self):
@@ -379,7 +402,7 @@ class Defender(gym.Env):
         if n == 1:
             return np.array([self.initial_potential])
 
-        values = [np.random.uniform() for i in range(n-1)]
+        values = [np.random.uniform(low=0, high=1) for i in range(n-1)]
         values.extend([0,1])
         values.sort()
         values_arr = np.array(values)

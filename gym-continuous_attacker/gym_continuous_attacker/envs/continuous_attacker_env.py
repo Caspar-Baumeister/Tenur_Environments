@@ -7,7 +7,7 @@ import numpy as np
 
 ###### GYM ######
 
-class Attacker(gym.Env):
+class CAttacker(gym.Env):
 
 
     def __init__(self, K, initial_potential, verbose=0, difficulty=0):
