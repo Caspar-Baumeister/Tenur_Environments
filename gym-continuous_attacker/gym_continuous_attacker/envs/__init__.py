@@ -1,1 +1,1 @@
-from gym_attacker.envs.attacker_env import Attacker
+from gym_continuous_attacker.envs.continuous_attacker_env import CAttacker

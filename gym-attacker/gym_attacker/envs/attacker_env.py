@@ -10,7 +10,7 @@ import numpy as np
 class Attacker(gym.Env):
 
 
-    def __init__(self, K, initial_potential, verbose=0, random_probabillity=0.5):
+    def __init__(self, K, initial_potential, verbose=0, random_probability=0.5):
         self.state = None
         self.K = K
         self.initial_potential = initial_potential
@@ -18,7 +18,7 @@ class Attacker(gym.Env):
         self.done = 0
         self.reward = 0
         self.action_space = spaces.Discrete(self.K + 1)
-        self.observation_space= spaces.MultiDiscrete([400]* (K+1))
+        self.observation_space= spaces.MultiDiscrete([10]* (K+1))
         self.geo_prob = .3
         self.unif_prob = .4
         self.diverse_prob = .3
@@ -27,7 +27,7 @@ class Attacker(gym.Env):
         self.unif_high = max(3, self.K-3)
         self.geo_ps = [0.45, 0.5, 0.6, 0.7, 0.8]
         self.verbose= verbose
-        self.random_probabillity = random_probabillity        
+        self.random_probability = random_probability        
 
     def potential(self, A):
         return np.sum(A*self.weights)
@@ -54,7 +54,7 @@ class Attacker(gym.Env):
 
 
     def defense_play(self, A, B):
-        if np.random.uniform() < self.random_probabillity:
+        if np.random.uniform() < self.random_probability:
             self.random_defense_play(A, B)
         else:
             self.deterministic_defense_play(A, B)

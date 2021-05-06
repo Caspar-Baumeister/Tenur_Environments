@@ -7,13 +7,14 @@ import numpy as np
 
 class Defender(gym.Env):
 
-    def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, verbose = 0, 
-    geo_prob = .3, unif_prob = .4, diverse_prob = .3, high_one_prob = 0.2, ):
+    def __init__(self, K, initial_potential, disjoint_support_probabillity=0.5, advanced_disjoint_support = False, verbose = 0, 
+    geo_prob = .3, unif_prob = .4, diverse_prob = .3, high_one_prob = 0.2):
 
         self.K = K
         self.initial_potential = initial_potential
         
         self.disjoint_support_probabillity = disjoint_support_probabillity
+        self.advanced_disjoint_support = advanced_disjoint_support
         self.verbose = verbose
 
         # internel variables
@@ -189,6 +190,8 @@ class Defender(gym.Env):
         # if only few pieces left, play optimally
         num_idxs = np.sum(self.game_state)
         if num_idxs <= 3:
+            return self.optimal_split()
+        if self.advanced_disjoint_support and (self.potential(self.game_state) >= 1):
             return self.optimal_split()
         # otherwise play according to difficulty
         if np.random.uniform()<=self.disjoint_support_probabillity:
