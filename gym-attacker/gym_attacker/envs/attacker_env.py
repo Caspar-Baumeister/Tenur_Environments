@@ -96,8 +96,11 @@ class Attacker(gym.Env):
         A[:target+1] = self.state[:target+1]
         B[target+1:] = self.state[target+1:]
 
+        # amount of pieces in target level
         pieces_target = self.state[target]
-        potA = self.potential(A)
+
+        # potentials of the current splits
+        potA = self.potential(A) 
         potB = self.potential(B)
         potTarget = pieces_target * self.weights[target]
 
@@ -111,7 +114,7 @@ class Attacker(gym.Env):
         # that make the difference between A + target and B where the amount of pieces is related to the potential of the target level),
         # is a value greater then zero.
         else:
-            diff_pieces = (potA + l - potB)/self.weights[target]
+            diff_pieces = (potA + potTarget - potB)/self.weights[target]
 
             # if possible, we then splitt the piece difference in half and distribute them equaly.
             # If there are not enough pieces in the target level then potB + potTarget <= potA abd we put them all to B
