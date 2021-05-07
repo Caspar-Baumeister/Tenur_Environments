@@ -87,24 +87,49 @@ class Attacker(gym.Env):
         else:
             return 0
 
-
-    def step(self, target):
+    def propose_sets(self, target):
         if self.verbose:
             self.render()
             print("target: ",target)
         A = [0] * (self.K + 1)
         B = [0] * (self.K + 1)
-        for i in range(target):
-            A[i] = self.state[i]
-        for i in range(target + 1, self.K + 1):
-            B[i] = self.state[i]
-        n = self.state[target]
-        while (n>0):
-            if self.potential(A) > self.potential(B):
-                B[target] += 1
-            else:
-                A[target] += 1
-            n -= 1
+        A[:target+1] = self.state[:target+1]
+        B[target+1:] = self.state[target+1:]
+
+        pieces_target = self.state[target]
+        potA = self.potential(A)
+        potB = self.potential(B)
+        potTarget = pieces_target * self.weights[target]
+
+        # In case that if one would add all pieces from the target level to A 
+        # and A would still have a smaller potential then B, add them to A
+        if potA + potTarget <= potB:
+            A[target] = pieces_target
+
+        # otherwise, if by doing so A and level target would have a greater potential then B, 
+        # we ensure that the diff_pieces (the amount of pieces
+        # that make the difference between A + target and B where the amount of pieces is related to the potential of the target level),
+        # is a value greater then zero.
+        else:
+            diff_pieces = (potA + l - potB)/self.weights[target]
+
+            # if possible, we then splitt the piece difference in half and distribute them equaly.
+            # If there are not enough pieces in the target level then potB + potTarget <= potA abd we put them all to B
+            pieces_shift = min(int(diff_pieces/2), pieces_target)
+            B[target] = pieces_shift
+            A[target] = pieces_target - pieces_shift
+
+        # because of the rounding above, to work towards more generalization, we switch the sets occasionally.
+        rand = np.random.binomial(1, 0.5)
+        if rand:
+            return A, B
+        else:
+            return B, A
+
+
+    def step(self, target):
+        A,B = self.propose_sets(target)
+        
         self.defense_play(A,B)
         win = self.check()
         if(win):
@@ -131,7 +156,8 @@ class Attacker(gym.Env):
         print("")
 
 
-    ######################## Start State ##################################
+    ######################## State Space Sampling ##################################
+
     def random_start(self):
         return self.sample()
 
@@ -254,7 +280,7 @@ class Attacker(gym.Env):
         if n == 1:
             return np.array([self.initial_potential])
 
-        values = [np.random.uniform() for i in range(n-1)]
+        values = [np.random.uniform(low=0, high=1) for i in range(n-1)]
         values.extend([0,1])
         values.sort()
         values_arr = np.array(values)
@@ -306,39 +332,4 @@ class Attacker(gym.Env):
             remainder = pot_idx - num_pieces*self.weights[idx]
 
         return state
-
-    def enumerate_states_core(self, K, P, N, weights):
-        """
-        This function takes in values for K, potential, N and weights
-        and enumerates all states of that potential, returning them as
-        a list.
-        """ 
-
-        # base case
-        if K == 2:
-            result = []
-            max_N = np.floor(N*(weights[0]/weights[K-1])).astype("int") + 1
-            
-            for i in range(max_N):
-                result.append([N - 2*i, i])
-
-        # recursion
-        else:
-            result = []
-            scaling = (weights[0]/weights[K-1])
-            max_N = np.floor(N*scaling).astype("int") + 1
-            
-            for i in range(max_N):
-                recursed_results = self.enumerate_states_core(K-1, P-i*weights[K-1], int(N - i/scaling), weights[:-1])
-
-                # edit recursed results and append
-                for state in recursed_results:
-                    state.append(i)
-                
-                # add on to list of states
-                result.extend(recursed_results)
-        
-        # NOTE: result contains list of states that are missing level K (which must always be 0)
-        # this needs to be added on after getting the result
-        return result
             
