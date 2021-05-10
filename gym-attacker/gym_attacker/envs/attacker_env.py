@@ -17,7 +17,7 @@ class Attacker(gym.Env):
         self.weights = np.power(2.0, [-(self.K - i) for i in range(self.K + 1)])
         self.done = 0
         self.reward = 0
-        self.action_space = spaces.Discrete(self.K + 1)
+        self.action_space = spaces.Discrete(self.K)
         self.observation_space= spaces.MultiDiscrete([10]* (K+1))
         self.geo_prob = .3
         self.unif_prob = .4
@@ -88,6 +88,12 @@ class Attacker(gym.Env):
             return 0
 
     def propose_sets(self, target):
+        """Function to divide the game state into two sets A and B, where set A holds all pieces until the target level
+        and set B all the pieces from the target level. The target level is then divided so that the potetials of both sets
+        are as equal as possible.
+        Returns:
+            np.array, np.array.
+        """
         if self.verbose:
             self.render()
             print("target: ",target)
