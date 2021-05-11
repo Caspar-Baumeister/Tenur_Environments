@@ -79,7 +79,6 @@ class Attacker(gym.Env):
         Returns:
             int -- If the game is not over returns 0, otherwise returns -1 if the defender won or 1 if the attacker won.
         """
-
         if (sum(self.state) == 0):
             return -1
         elif (self.state[-1] >=1 ):
@@ -97,22 +96,32 @@ class Attacker(gym.Env):
         if self.verbose:
             self.render()
             print("target: ",target)
-        A = [0] * (self.K + 1)
-        B = [0] * (self.K + 1)
+        A = np.zeros(self.K+1).astype("int")
+        B = np.zeros(self.K+1).astype("int")
         A[:target+1] = self.state[:target+1]
         B[target+1:] = self.state[target+1:]
 
         # amount of pieces in target level
         pieces_target = self.state[target]
+        print("pieces_target: " + str(pieces_target))
 
         # potentials of the current splits
         potA = self.potential(A) 
         potB = self.potential(B)
+
+        print("only a: " + str(potA))
+        print("only b: " + str(potB))
+
         potTarget = pieces_target * self.weights[target]
+
+        print("potTarget: " + str(potTarget))
+
+        if pieces_target == 0:
+            pass
 
         # In case that if one would add all pieces from the target level to A 
         # and A would still have a smaller potential then B, add them to A
-        if potA + potTarget <= potB:
+        elif potA + potTarget <= potB:
             A[target] = pieces_target
 
         # otherwise, if by doing so A and level target would have a greater potential then B, 
@@ -121,6 +130,8 @@ class Attacker(gym.Env):
         # is a value greater then zero.
         else:
             diff_pieces = (potA + potTarget - potB)/self.weights[target]
+
+            print("diff_pieces: " + str(diff_pieces))
 
             # if possible, we then splitt the piece difference in half and distribute them equaly.
             # If there are not enough pieces in the target level then potB + potTarget <= potA abd we put them all to B
