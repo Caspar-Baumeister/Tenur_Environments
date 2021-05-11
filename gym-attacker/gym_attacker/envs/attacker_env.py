@@ -10,7 +10,7 @@ import numpy as np
 class Attacker(gym.Env):
 
 
-    def __init__(self, K, initial_potential, verbose=0, random_probability=0.5):
+    def __init__(self, K, initial_potential, random_probability=0.5):
         self.state = None
         self.K = K
         self.initial_potential = initial_potential
@@ -26,7 +26,7 @@ class Attacker(gym.Env):
         self.geo_high = self.K - 2
         self.unif_high = max(3, self.K-3)
         self.geo_ps = [0.45, 0.5, 0.6, 0.7, 0.8]
-        self.verbose= verbose
+        # 0 -> optimal opponent, 1 -> 100% random opponent
         self.random_probability = random_probability        
 
     def potential(self, A):
@@ -93,9 +93,6 @@ class Attacker(gym.Env):
         Returns:
             np.array, np.array.
         """
-        if self.verbose:
-            self.render()
-            print("target: ",target)
         A = np.zeros(self.K+1).astype("int")
         B = np.zeros(self.K+1).astype("int")
         A[:1+target] = self.state[:1+target]
@@ -103,18 +100,15 @@ class Attacker(gym.Env):
 
         # amount of pieces in target level
         pieces_target = self.state[target]
-        print("pieces_target: " + str(pieces_target))
+        
 
         # potentials of the current splits
         potA = self.potential(A) 
         potB = self.potential(B)
 
-        print("only a: " + str(potA))
-        print("only b: " + str(potB))
 
         potTarget = pieces_target * self.weights[target]
 
-        print("potTarget: " + str(potTarget))
 
         if pieces_target == 0:
             pass
@@ -130,8 +124,6 @@ class Attacker(gym.Env):
         # is a value greater then zero.
         else:
             diff_pieces = (potA + potTarget - potB)/self.weights[target]
-
-            print("diff_pieces: " + str(diff_pieces))
 
             # if possible, we then splitt the piece difference in half and distribute them equaly.
             # If there are not enough pieces in the target level then potB + potTarget <= potA abd we put them all to B
@@ -149,14 +141,10 @@ class Attacker(gym.Env):
 
     def step(self, target):
         A,B = self.propose_sets(target)
-        print("A: " + str(A) + ", pot: " + str(self.potential(A)))
-        print("B: " + str(B) + ", pot: " + str(self.potential(B)))
         
         self.defense_play(A,B)
         win = self.check()
         if(win):
-            if self.verbose:
-                print("done with reward: ", win)
             self.done = 1
             self.reward = win
 
