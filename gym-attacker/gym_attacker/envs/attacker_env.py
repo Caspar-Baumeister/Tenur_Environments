@@ -138,6 +138,8 @@ class Attacker(gym.Env):
 
     def step(self, target):
         A,B = self.propose_sets(target)
+        print("A: " + str(A))
+        print("B: " + str(B))
         
         self.defense_play(A,B)
         win = self.check()
