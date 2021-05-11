@@ -98,7 +98,7 @@ class Attacker(gym.Env):
             print("target: ",target)
         A = np.zeros(self.K+1).astype("int")
         B = np.zeros(self.K+1).astype("int")
-        A[:target] = self.state[:target]
+        A[:1+target] = self.state[:1+target]
         B[target:] = self.state[target:]
 
         # amount of pieces in target level
