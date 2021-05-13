@@ -3,6 +3,7 @@ from gym import error, spaces, utils
 from gym.utils import seeding
 from random import randint, choice
 import numpy as np
+import math
 
 
 ###### GYM ######
