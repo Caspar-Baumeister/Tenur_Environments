@@ -14,7 +14,7 @@ class CAttacker(gym.Env):
     - K: {int} amound of level
     - initial_potential: {float} initial potential
     """
-    def __init__(self, K, initial_potential, opponent_strategy = "disjoint_support", disjoint_support_error_rate=0):
+    def __init__(self, K, initial_potential, opponent_strategy = "optimal", disjoint_support_error_rate=10):
 
         # input class variables
         self.K = K
@@ -66,7 +66,15 @@ class CAttacker(gym.Env):
 
 
     def defense_play(self, A, B):
-        if self.opponent_strategy == "random":
+        if self.opponent_strategy == "optimal":
+            potA = self.potential(A)
+            potB = self.potential(B)
+            if (potA >= potB):
+                self.erase(A)
+            else:
+                self.erase(B)
+
+        elif self.opponent_strategy == "random":
             rand = np.random.binomial(1, 0.5)
             if rand:
                 self.erase(A)
