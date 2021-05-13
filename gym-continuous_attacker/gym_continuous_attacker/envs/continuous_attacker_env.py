@@ -8,17 +8,37 @@ import numpy as np
 ###### GYM ######
 
 class CAttacker(gym.Env):
+    """
+    INPUT:
+    - K: {int} amound of level
+    - initial_potential: {float} initial potential
+    - verbose: {int}
+    """
+    def __init__(self, K, initial_potential, opponent_strategy = "disjoint_support", disjoint_support_error_rate=0.2, verbose=0):
 
-
-    def __init__(self, K, initial_potential, verbose=0, difficulty=0):
-        self.state = None
+        # input class variables
         self.K = K
         self.initial_potential = initial_potential
+        self.opponent_strategy = opponent_strategy
+        self.disjoint_support_error_rate = disjoint_support_error_rate
+        self.verbose= verbose
+
+        # action and observation space
+        self.action_space = self.action_space = spaces.Box(
+            low=0,
+            high=1,
+            shape=(self.K,),
+            dtype=np.float32)
+        
+        self.observation_space= spaces.MultiDiscrete([400]* (K+1))
+        
+        # internal class variables
         self.weights = np.power(2.0, [-(self.K - i) for i in range(self.K + 1)])
+        self.state = None
         self.done = 0
         self.reward = 0
-        self.action_space = spaces.Discrete(self.K + 1)
-        self.observation_space= spaces.MultiDiscrete([400]* (K+1))
+
+        # start state distribution settings
         self.geo_prob = .3
         self.unif_prob = .4
         self.diverse_prob = .3
@@ -26,8 +46,6 @@ class CAttacker(gym.Env):
         self.geo_high = self.K - 2
         self.unif_high = max(3, self.K-3)
         self.geo_ps = [0.45, 0.5, 0.6, 0.7, 0.8]
-        self.verbose= verbose
-        self.difficulty = difficulty        
 
     def potential(self, A):
         return np.sum(A*self.weights)
@@ -48,30 +66,30 @@ class CAttacker(gym.Env):
         self.state = np.array([0] + self.state[:-1])
 
 
-    def _seed(self, seed=None):
-        self.np_random, seed = seeding.np_random(seed)
-        return [seed]
-
-
     def defense_play(self, A, B):
-        if np.random.randint(1,100) < self.difficulty:
-            self.deterministic_defense_play(A, B)
-        else:
-            self.random_defense_play(A, B)
+        if self.opponent_strategy == "random":
+            if np.random.random_sample() < 0.5:
+                self.erase(A)
+            else:
+                self.erase(B)
+        elif self.opponent_strategy =="disjoint_support":
+            """
+            plays mostly optimal but ocasionally it chooses randomly
+            """
+            potA = self.potential(A)
+            potB = self.potential(B)
+            r = np.random.random_sample()
+            if (potA >= potB):
+                if r < self.disjoint_support_error_rate:
+                    self.erase(A)
+                else:
+                    self.erase(B)
+            else:
+                if r < self.disjoint_support_error_rate:
+                    self.erase(B)
+                else:
+                    self.erase(A)
 
-    def deterministic_defense_play(self, A, B):
-        potA = self.potential(A)
-        potB = self.potential(B)
-        if (potA >= potB):
-            self.erase(A)
-        else:
-            self.erase(B)
-
-    def random_defense_play(self, A, B):
-        if np.random.random_sample() < 0.5:
-            self.erase(A)
-        else:
-            self.erase(B)
 
 
     def check(self):
@@ -87,24 +105,28 @@ class CAttacker(gym.Env):
         else:
             return 0
 
-
-    def step(self, target):
-        if self.verbose:
-            self.render()
-            print("target: ",target)
+    def discretize(self, target):
         A = [0] * (self.K + 1)
         B = [0] * (self.K + 1)
-        for i in range(target):
-            A[i] = self.state[i]
-        for i in range(target + 1, self.K + 1):
-            B[i] = self.state[i]
-        n = self.state[target]
-        while (n>0):
-            if self.potential(A) > self.potential(B):
-                B[target] += 1
-            else:
-                A[target] += 1
-            n -= 1
+        for i,p in enumerate(target):
+            A[i] = math.floor(self.state[i]*p)
+            B[i] = self.state[i] - A[i]
+        return A,B
+
+
+
+    def step(self, target):
+        """
+        Takes the action and executes them. 
+        Arguments:
+            target {list} -- return from action space
+        """
+        if self.verbose:
+            self.render()
+            print("this is the target: ",target)
+
+        A,B = self.discretize(target)
+
         self.defense_play(A,B)
         win = self.check()
         if(win):
@@ -115,15 +137,11 @@ class CAttacker(gym.Env):
 
         return self.state, self.reward, self.done, {}
 
-
     def reset(self):
         self.state = self.random_start()
         self.done = 0
         self.reward = 0
         return self.state
-
-
-
 
     def render(self):
         for j in range(self.K + 1):
@@ -306,39 +324,3 @@ class CAttacker(gym.Env):
             remainder = pot_idx - num_pieces*self.weights[idx]
 
         return state
-
-    def enumerate_states_core(self, K, P, N, weights):
-        """
-        This function takes in values for K, potential, N and weights
-        and enumerates all states of that potential, returning them as
-        a list.
-        """ 
-
-        # base case
-        if K == 2:
-            result = []
-            max_N = np.floor(N*(weights[0]/weights[K-1])).astype("int") + 1
-            
-            for i in range(max_N):
-                result.append([N - 2*i, i])
-
-        # recursion
-        else:
-            result = []
-            scaling = (weights[0]/weights[K-1])
-            max_N = np.floor(N*scaling).astype("int") + 1
-            
-            for i in range(max_N):
-                recursed_results = self.enumerate_states_core(K-1, P-i*weights[K-1], int(N - i/scaling), weights[:-1])
-
-                # edit recursed results and append
-                for state in recursed_results:
-                    state.append(i)
-                
-                # add on to list of states
-                result.extend(recursed_results)
-        
-        # NOTE: result contains list of states that are missing level K (which must always be 0)
-        # this needs to be added on after getting the result
-        return result
-            
