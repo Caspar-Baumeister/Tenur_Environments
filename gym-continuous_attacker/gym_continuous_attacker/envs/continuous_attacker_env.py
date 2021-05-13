@@ -13,16 +13,14 @@ class CAttacker(gym.Env):
     INPUT:
     - K: {int} amound of level
     - initial_potential: {float} initial potential
-    - verbose: {int}
     """
-    def __init__(self, K, initial_potential, opponent_strategy = "disjoint_support", disjoint_support_error_rate=0.2, verbose=0):
+    def __init__(self, K, initial_potential, opponent_strategy = "disjoint_support", disjoint_support_error_rate=0):
 
         # input class variables
         self.K = K
         self.initial_potential = initial_potential
         self.opponent_strategy = opponent_strategy
         self.disjoint_support_error_rate = disjoint_support_error_rate
-        self.verbose= verbose
 
         # action and observation space
         self.action_space = self.action_space = spaces.Box(
@@ -69,7 +67,8 @@ class CAttacker(gym.Env):
 
     def defense_play(self, A, B):
         if self.opponent_strategy == "random":
-            if np.random.random_sample() < 0.5:
+            rand = np.random.binomial(1, 0.5)
+            if rand:
                 self.erase(A)
             else:
                 self.erase(B)
@@ -98,7 +97,6 @@ class CAttacker(gym.Env):
         Returns:
             int -- If the game is not over returns 0, otherwise returns -1 if the defender won or 1 if the attacker won.
         """
-
         if (sum(self.state) == 0):
             return -1
         elif (self.state[-1] >=1 ):
@@ -107,12 +105,16 @@ class CAttacker(gym.Env):
             return 0
 
     def discretize(self, target):
-        A = [0] * (self.K + 1)
-        B = [0] * (self.K + 1)
+        A = np.zeros(self.K+1).astype("int")
+        B = np.zeros(self.K+1).astype("int")
         for i,p in enumerate(target):
             A[i] = math.floor(self.state[i]*p)
             B[i] = self.state[i] - A[i]
-        return A,B
+        rand = np.random.binomial(1, 0.5)
+        if rand:
+            return A, B
+        else:
+            return B, A
 
 
 
@@ -122,17 +124,11 @@ class CAttacker(gym.Env):
         Arguments:
             target {list} -- return from action space
         """
-        if self.verbose:
-            self.render()
-            print("this is the target: ",target)
-
         A,B = self.discretize(target)
 
         self.defense_play(A,B)
         win = self.check()
         if(win):
-            if self.verbose:
-                print("done with reward: ", win)
             self.done = 1
             self.reward = win
 
